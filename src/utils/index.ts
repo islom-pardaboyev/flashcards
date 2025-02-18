@@ -4,7 +4,6 @@ const getStore = (key: string) => {
       if (!result) return undefined;
       return JSON.parse(result);
     } catch (error) {
-      console.log(error);
     }
   };
   const setStore = (key: string, data: object[]) => {
@@ -12,7 +11,6 @@ const getStore = (key: string) => {
       const result = JSON.stringify(data);
       localStorage.setItem(key, result);
     } catch (error) {
-      console.log(error);
     }
   };
   

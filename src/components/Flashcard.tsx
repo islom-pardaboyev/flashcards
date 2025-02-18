@@ -26,7 +26,6 @@ function FlashcardComponent() {
     const [isAdding, setIsAdding] = useState(false);
     const { register, handleSubmit, reset } = useForm<FlashcardInput>();
     const handleSubmitForm = (data: FlashcardInput) => {
-      console.log(data);
       const flashcardContext = {
         id: cards[0]?.id ? cards[0].id + 1 : 1,
         front: data.front,
@@ -38,12 +37,10 @@ function FlashcardComponent() {
     };
   
     const deleteFlashcard = (id:number) => {
-      console.log(id);
       setCards(p => p.filter(c => c.id!= id));
     }
     
     setStore("flashcards", cards);
-    console.log(cards);
   return (
     <section className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 p-8">
     <div className="max-w-4xl mx-auto">
