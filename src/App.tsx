@@ -22,7 +22,6 @@ function App() {
   const [cards, setCards] = useState<Flashcard[]>(getStore("flashcards") || []);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [currentFlashcard, setCurrentFlashcard] = useState(1)
   const { register, handleSubmit, reset } = useForm<FlashcardInput>();
   const handleSubmitForm = (data: FlashcardInput) => {
     console.log(data);
