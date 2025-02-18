@@ -24,17 +24,6 @@ function FlashcardComponent() {
   const [isAdding, setIsAdding] = useState(false);
   const { register, handleSubmit, reset } = useForm<FlashcardInput>();
 
-  const handleSubmitForm = (data: FlashcardInput) => {
-    const flashcardContext = {
-      id: cards[0]?.id ? cards[0].id + 1 : 1,
-      front: data.front,
-      back: data.back,
-    };
-    setCards((prev) => [flashcardContext, ...prev]);
-    setIsAdding(false);
-    reset();
-  };
-
   const deleteFlashcard = (id: number) => {
     setCards((prev) => prev.filter((c) => c.id !== id));
     setFlippedCards((prev) => {
@@ -51,12 +40,34 @@ function FlashcardComponent() {
     }));
   };
 
+  const shuffleArray = (array: Flashcard[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+  
+  const handleSubmitForm = (data: FlashcardInput) => {
+    const flashcardContext = {
+      id: cards.length ? cards[0].id + 1 : 1,
+      front: data.front,
+      back: data.back,
+    };
+  
+    const updatedCards = [flashcardContext, ...cards];
+    setCards(shuffleArray(updatedCards));
+    setIsAdding(false);
+    reset();
+  };
+
   setStore("flashcards", cards);
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 p-8">
+    <section className="min-h-screen p-8 bg-gradient-to-br from-indigo-100 to-purple-100">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-indigo-900 mb-8">
+        <h1 className="mb-8 text-4xl font-bold text-center text-indigo-900">
           Flashcards
         </h1>
 
@@ -64,18 +75,18 @@ function FlashcardComponent() {
         {!isAdding ? (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center w-full mb-8 p-4 border-2 border-dashed border-indigo-300 rounded-lg text-indigo-600 hover:border-indigo-500 hover:text-indigo-700 transition-colors"
+            className="flex items-center justify-center w-full p-4 mb-8 text-indigo-600 border-2 border-indigo-300 border-dashed rounded-lg hover:border-indigo-500 hover:text-indigo-700 transition-colors"
           >
             <Plus className="mr-2" /> Add New Card
           </button>
         ) : (
           <form
             onSubmit={handleSubmit(handleSubmitForm)}
-            className="bg-white rounded-lg shadow-xl p-6 mb-8"
+            className="p-6 mb-8 bg-white rounded-lg shadow-xl"
           >
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
                   Front
                 </label>
                 <textarea
@@ -85,7 +96,7 @@ function FlashcardComponent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
                   Back
                 </label>
                 <textarea
@@ -101,7 +112,7 @@ function FlashcardComponent() {
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                <button className="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
                   Add Card
                 </button>
               </div>
@@ -116,7 +127,7 @@ function FlashcardComponent() {
                 <SwiperSlide key={card.id} className="relative">
                   <X
                     onClick={() => deleteFlashcard(card.id)}
-                    className="absolute top-5 right-5 z-30 text-red-500 cursor-pointer"
+                    className="absolute z-30 text-red-500 cursor-pointer top-5 right-5"
                   />
                   <div
                     className="bg-white rounded-xl min-h-[300px] cursor-pointer relative"
@@ -128,13 +139,13 @@ function FlashcardComponent() {
                     onClick={() => toggleFlip(card.id)}
                   >
                     <div
-                      className="absolute inset-0 backface-hidden p-8 flex items-center justify-center text-center"
+                      className="absolute inset-0 flex items-center justify-center p-8 text-center backface-hidden"
                       style={{ backfaceVisibility: "hidden" }}
                     >
                       <p className="text-2xl">{card.front}</p>
                     </div>
                     <div
-                      className="absolute inset-0 backface-hidden p-8 flex items-center justify-center text-center"
+                      className="absolute inset-0 flex items-center justify-center p-8 text-center backface-hidden"
                       style={{
                         backfaceVisibility: "hidden",
                         transform: "rotateY(180deg)",
@@ -148,7 +159,7 @@ function FlashcardComponent() {
             </Swiper>
           </div>
         ) : (
-          <div className="text-center text-gray-500 mt-8">
+          <div className="mt-8 text-center text-gray-500">
             No flashcards yet. Add some to get started!
           </div>
         )}
